@@ -1,8 +1,8 @@
-const BASE_URL = 'http://localhost:3000/api';
+const BASE_URL = '/api';
 
 function getAuthHeader() {
   const token = localStorage.getItem('token');
-  return { Authorization: `Bearer ${token}` };
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 export async function getAllPosts(page = 1, limit = 10) {

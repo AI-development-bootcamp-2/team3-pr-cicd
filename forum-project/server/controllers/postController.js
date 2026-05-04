@@ -6,51 +6,68 @@ const getAll = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip  = (page - 1) * limit;
 
-    const filter = { ...req.query };
-    delete filter.page;
-    delete filter.limit;
-
     const [posts, total] = await Promise.all([
-      Post.find(filter).skip(skip).limit(limit).populate('author'),
-      Post.countDocuments(filter),
+      Post.find().skip(skip).limit(limit).populate('author', 'username avatar'),
+      Post.countDocuments(),
     ]);
 
     res.json({ posts, page, limit, total });
   } catch (err) {
-    res.status(500).json({ error: true, message: err.message, stack: err.stack, code: 500 });
+    console.error(err);
+    res.status(500).json({ error: true, message: 'Internal server error', code: 500 });
   }
 };
 
 const getById = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id).populate('author');
+    const post = await Post.findById(req.params.id).populate('author', 'username avatar');
     if (!post) return res.status(404).json({ error: true, message: 'Post not found', code: 404 });
     res.json(post);
   } catch (err) {
-    res.status(500).json({ error: true, message: err.message, stack: err.stack, code: 500 });
+    console.error(err);
+    res.status(500).json({ error: true, message: 'Internal server error', code: 500 });
   }
 };
 
 const create = async (req, res) => {
   try {
-    const post = new Post({
-      ...req.body,
-      author: req.user._id,
-    });
+    const { title, content, category, tags } = req.body;
+
+    if (!title || !content) {
+      return res.status(400).json({ error: true, message: 'Title and content are required', code: 400 });
+    }
+
+    const post = new Post({ title, content, category, tags, author: req.user._id });
     await post.save();
+    await post.populate('author', 'username avatar');
     res.status(201).json(post);
   } catch (err) {
-    res.status(500).json({ error: true, message: err.message, stack: err.stack, code: 500 });
+    console.error(err);
+    res.status(500).json({ error: true, message: 'Internal server error', code: 500 });
   }
 };
 
 const update = async (req, res) => {
   try {
-    const post = await Post.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('author');
+    const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ error: true, message: 'Post not found', code: 404 });
+
+    if (!post.author.equals(req.user._id) && req.user.role !== 'admin') {
+      return res.status(403).json({ error: true, message: 'Forbidden', code: 403 });
+    }
+
+    const { title, content, category, tags } = req.body;
+    if (title    !== undefined) post.title    = title;
+    if (content  !== undefined) post.content  = content;
+    if (category !== undefined) post.category = category;
+    if (tags     !== undefined) post.tags     = tags;
+
+    await post.save();
+    await post.populate('author', 'username avatar');
     res.json(post);
   } catch (err) {
-    res.status(500).json({ error: true, message: err.message, stack: err.stack, code: 500 });
+    console.error(err);
+    res.status(500).json({ error: true, message: 'Internal server error', code: 500 });
   }
 };
 
@@ -59,23 +76,25 @@ const remove = async (req, res) => {
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ error: true, message: 'Post not found', code: 404 });
 
-    if (post.author.toString() !== req.user._id) {
+    if (!post.author.equals(req.user._id) && req.user.role !== 'admin') {
       return res.status(403).json({ error: true, message: 'Forbidden', code: 403 });
     }
 
     await post.deleteOne();
     res.json({ message: 'Post deleted' });
   } catch (err) {
-    res.status(500).json({ error: true, message: err.message, stack: err.stack, code: 500 });
+    console.error(err);
+    res.status(500).json({ error: true, message: 'Internal server error', code: 500 });
   }
 };
 
 const getByUser = async (req, res) => {
   try {
-    const posts = await Post.find({ author: req.params.id }).populate('author');
+    const posts = await Post.find({ author: req.params.id }).populate('author', 'username avatar');
     res.json(posts);
   } catch (err) {
-    res.status(500).json({ error: true, message: err.message, stack: err.stack, code: 500 });
+    console.error(err);
+    res.status(500).json({ error: true, message: 'Internal server error', code: 500 });
   }
 };
 

@@ -15,7 +15,7 @@ export default function PostCard({ post, currentUser, onDeleted }) {
         <span>{post.author.username}</span>
       </div>
       <h2>{post.title}</h2>
-      <div dangerouslySetInnerHTML={{ __html: post.content }} />
+      <p>{post.content}</p>
       <small>{new Date(post.createdAt).toLocaleString()}</small>
       {isOwner && (
         <div className="post-actions">
