@@ -81,9 +81,4 @@ Status codes: 400 bad input · 401 missing/invalid auth · 403 forbidden · 404 
 - Comments returned oldest-first.
 - Only the resource owner or an admin may edit/delete a post or comment.
 
-## Development Workflow
 
-- Each feature ships in its own PR.
-- CI must pass before merge.
-- A second team performs code review before merge to main.
-- Intentional bugs (if any) are documented in a private file — not committed to main.
