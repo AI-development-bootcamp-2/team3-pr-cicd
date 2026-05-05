@@ -6,7 +6,7 @@ const postsRouter = require('./routes/posts');
 const usersRouter = require('./routes/users');
 
 const app = express();
-app.use(cors({ origin: '*', credentials: true }));
+app.use(cors());
 app.use(express.json());
 
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/forum');

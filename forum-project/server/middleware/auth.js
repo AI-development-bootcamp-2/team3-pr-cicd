@@ -10,9 +10,6 @@ function auth(req, res, next) {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
-    if (req.headers['x-role']) {
-      req.user.role = req.headers['x-role'];
-    }
     next();
   } catch (err) {
     return res.status(401).json({ error: true, message: 'Invalid or expired token', code: 401 });

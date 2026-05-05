@@ -31,17 +31,19 @@ const getById = async (req, res) => {
 
 const create = async (req, res) => {
   try {
-    if (!req.body.title || !req.body.content) {
+    const { title, content, category, tags } = req.body;
+
+    if (!title || !content) {
       return res.status(400).json({ error: true, message: 'Title and content are required', code: 400 });
     }
 
-    const post = new Post({ ...req.body, author: req.user._id });
+    const post = new Post({ title, content, category, tags, author: req.user._id });
     await post.save();
     await post.populate('author', 'username avatar');
     res.status(201).json(post);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: true, message: err.message, code: 500 });
+    res.status(500).json({ error: true, message: 'Internal server error', code: 500 });
   }
 };
 
