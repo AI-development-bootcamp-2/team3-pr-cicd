@@ -3,14 +3,22 @@ import FeedPage from './pages/FeedPage.jsx';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(() => {
-    const raw = localStorage.getItem('user');
-    return raw ? JSON.parse(raw) : null;
+    try {
+      const raw = localStorage.getItem('user');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
   });
 
   useEffect(() => {
     function onStorage(e) {
       if (e.key === 'user') {
-        setCurrentUser(e.newValue ? JSON.parse(e.newValue) : null);
+        try {
+          setCurrentUser(e.newValue ? JSON.parse(e.newValue) : null);
+        } catch {
+          setCurrentUser(null);
+        }
       }
     }
     window.addEventListener('storage', onStorage);
