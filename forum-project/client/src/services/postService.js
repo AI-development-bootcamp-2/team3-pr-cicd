@@ -1,47 +1,23 @@
 const BASE_URL = '/api';
 
-function getAuthHeader() {
+async function apiRequest(path, options = {}) {
   const token = localStorage.getItem('token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-export async function getAllPosts(page = 1, limit = 10) {
-  const res = await fetch(`${BASE_URL}/posts?page=${page}&limit=${limit}`);
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options.headers,
+  };
+  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || `Request failed: ${res.status}`);
+  }
   return res.json();
 }
 
-export async function getPostById(id) {
-  const res = await fetch(`${BASE_URL}/posts/${id}`);
-  return res.json();
-}
-
-export async function createPost(data) {
-  const res = await fetch(`${BASE_URL}/posts`, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-    body:    JSON.stringify(data),
-  });
-  return res.json();
-}
-
-export async function updatePost(id, data) {
-  const res = await fetch(`${BASE_URL}/posts/${id}`, {
-    method:  'PUT',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-    body:    JSON.stringify(data),
-  });
-  return res.json();
-}
-
-export async function deletePost(id) {
-  const res = await fetch(`${BASE_URL}/posts/${id}`, {
-    method:  'DELETE',
-    headers: getAuthHeader(),
-  });
-  return res.json();
-}
-
-export async function getPostsByUser(userId) {
-  const res = await fetch(`${BASE_URL}/users/${userId}/posts`);
-  return res.json();
-}
+export const getAllPosts     = (page = 1, limit = 10) => apiRequest(`/posts?page=${page}&limit=${limit}`);
+export const getPostById    = (id)       => apiRequest(`/posts/${id}`);
+export const createPost     = (data)     => apiRequest('/posts',       { method: 'POST',   body: JSON.stringify(data) });
+export const updatePost     = (id, data) => apiRequest(`/posts/${id}`, { method: 'PUT',    body: JSON.stringify(data) });
+export const deletePost     = (id)       => apiRequest(`/posts/${id}`, { method: 'DELETE' });
+export const getPostsByUser = (userId)   => apiRequest(`/users/${userId}/posts`);

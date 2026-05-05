@@ -1,11 +1,21 @@
+import { useState } from 'react';
 import { deletePost } from '../services/postService';
 
 export default function PostCard({ post, currentUser, onDeleted }) {
-  const isOwner = currentUser && currentUser._id === post.author._id;
+  const [isDeleting, setIsDeleting] = useState(false);
+  const isOwner = currentUser?._id === post.author?._id;
 
   async function handleDelete() {
-    await deletePost(post._id);
-    onDeleted(post._id);
+    if (!window.confirm('Are you sure you want to delete this post?')) return;
+    setIsDeleting(true);
+    try {
+      await deletePost(post._id);
+      onDeleted(post._id);
+    } catch {
+      alert('Failed to delete post. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
   }
 
   return (
@@ -19,7 +29,9 @@ export default function PostCard({ post, currentUser, onDeleted }) {
       <small>{new Date(post.createdAt).toLocaleString()}</small>
       {isOwner && (
         <div className="post-actions">
-          <button onClick={handleDelete}>Delete</button>
+          <button onClick={handleDelete} disabled={isDeleting}>
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </button>
         </div>
       )}
     </div>
