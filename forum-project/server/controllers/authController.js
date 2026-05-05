@@ -5,7 +5,7 @@ const User = require('../models/User');
 const COOKIE_OPTS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict',
+  sameSite: 'lax',
   maxAge: 60 * 60 * 1000,
 };
 
@@ -17,8 +17,17 @@ exports.register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    if (!username || !email || !password) {
-      return res.status(400).json({ error: true, message: 'All fields are required', code: 400 });
+    if (
+      typeof username !== 'string' ||
+      typeof email !== 'string' ||
+      typeof password !== 'string' ||
+      !username || !email || !password
+    ) {
+      return res.status(400).json({ error: true, message: 'All fields are required and must be strings', code: 400 });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ error: true, message: 'Password must be at least 8 characters long', code: 400 });
     }
 
     const existing = await User.findOne({ $or: [{ email }, { username }] });
@@ -33,7 +42,8 @@ exports.register = async (req, res) => {
     res.cookie('token', token, COOKIE_OPTS);
     res.status(201).json({ user: { _id: user._id, username: user.username, email: user.email } });
   } catch (err) {
-    res.status(500).json({ error: true, message: err.message, code: 500 });
+    console.error('Register error:', err);
+    res.status(500).json({ error: true, message: 'Internal server error', code: 500 });
   }
 };
 
@@ -56,11 +66,23 @@ exports.login = async (req, res) => {
     res.cookie('token', token, COOKIE_OPTS);
     res.json({ user: { _id: user._id, username: user.username, email: user.email } });
   } catch (err) {
-    res.status(500).json({ error: true, message: err.message, code: 500 });
+    console.error('Login error:', err);
+    res.status(500).json({ error: true, message: 'Internal server error', code: 500 });
   }
 };
 
 exports.logout = async (_req, res) => {
   res.clearCookie('token', COOKIE_OPTS);
   res.json({ message: 'Logged out' });
+};
+
+exports.me = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ error: true, message: 'User not found', code: 404 });
+    res.json({ user: { _id: user._id, username: user.username, email: user.email } });
+  } catch (err) {
+    console.error('Me error:', err);
+    res.status(500).json({ error: true, message: 'Internal server error', code: 500 });
+  }
 };

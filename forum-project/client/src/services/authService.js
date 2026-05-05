@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export async function login(email, password) {
   const res = await fetch(`${API_URL}/auth/login`, {
@@ -9,13 +9,16 @@ export async function login(email, password) {
   });
 
   const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || 'Login failed');
-  }
+  if (!res.ok) throw new Error(data.message || 'Login failed');
 
   localStorage.setItem('user', JSON.stringify(data.user));
   return data;
+}
+
+export async function me() {
+  const res = await fetch(`${API_URL}/auth/me`, { credentials: 'include' });
+  if (!res.ok) throw new Error('Not authenticated');
+  return res.json();
 }
 
 export function getUser() {
@@ -23,10 +26,14 @@ export function getUser() {
   return raw ? JSON.parse(raw) : null;
 }
 
-export async function logout() {
-  await fetch(`${API_URL}/auth/logout`, {
-    method: 'POST',
-    credentials: 'include',
-  });
+export function clearUser() {
   localStorage.removeItem('user');
+}
+
+export async function logout() {
+  try {
+    await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+  } finally {
+    localStorage.removeItem('user');
+  }
 }
