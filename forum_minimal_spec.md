@@ -98,7 +98,6 @@
 ### Business Rules
 - Title and content are required fields.
 - Only the post author (or admin) can edit or delete a post.
-- The feed endpoint must support pagination (`page` + `limit` query params).
 - Post responses must include the author's username and avatar.
 
 ---
